@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs
 import requests
 # import hashtools as ht
-import hashlib
+import hashlib as hl
 
 TARGET_WEBPAGES = {
 "https://forums.bohemia.net/forums/forum/156-arma-3-addons-mods-complete/":"page"
@@ -52,22 +52,27 @@ def score_mod_title(mod_title, keywords):
 
 def crawl_forum(page_text, BLACKLIST):
     soup = bs(page_text, features="lxml")
+    print ("Crawling, found %i links" % len(soup.find_all("a")))
     result = {}
     try:
         for link in soup.find_all("a"):
             is_modlink = True
             title = str(link.get('title'))
             href = str(link.get('href'))
+            # print(href)
+            # print(id)
             for string in START_BLACKLIST:
                 if title.startswith(string):
                     is_modlink = False
                 else:
                     pass
             if is_modlink:
+                id = href.split("/topic/")[1].split("-")[0]
                 score = score_mod_title(title, KEYWORDS_LIST)
-                # print {"title":title, "href":href, "score":score}
-                # result_dict.update({"title":title, "href":href, "score":score})
-                result[title] = {'href':href, 'score':score}
+                # result[title] = {'href':href, 'score':score}
+                result[id] = {'title':title, 'href':href, 'score':score}
+                print(result)
+
 
 
     except:
@@ -86,16 +91,20 @@ def crawl_forum(page_text, BLACKLIST):
 for url, pgvar in TARGET_WEBPAGES.items():
     output = {}
     for n in range(5):
-        page_text = load_page(url + "?" + pgvar + "=" + str(n))
+        if n == 0:
+            page_text = load_page(url)
+        else:
+            page_text = load_page(url + "?" + pgvar + "=" + str(n))
         # print len(page_text)
-        print(crawl_forum(page_text, START_BLACKLIST))
+        # print(crawl_forum(page_text, START_BLACKLIST))
         output.update(crawl_forum(page_text, START_BLACKLIST))
 
 print(output)
 
-for mod, attrs in output.items():
-    if int(attrs['score']) > 0:
-        print(mod, attrs)
+for id, mod in output.items():
+    if int(mod['score']) > 0:
+        print(id, mod)
 
+# for id, mod in
 
-import pdb; pdb.set_trace()
+# import pdb; pdb.set_trace()
