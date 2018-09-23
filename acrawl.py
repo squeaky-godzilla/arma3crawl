@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup as bs
 import requests
-# import hashtools as ht
-import hashlib as hl
+from htmlslacker import HTMLSlacker as htmlslacker
 
 TARGET_WEBPAGES = {
 "https://forums.bohemia.net/forums/forum/156-arma-3-addons-mods-complete/":"page"
@@ -51,11 +50,11 @@ def score_mod_title(mod_title, keywords):
 
 
 def crawl_forum(page_text, BLACKLIST):
-    soup = bs(page_text, features="lxml")
-    print ("Crawling, found %i links" % len(soup.find_all("a")))
+    forum = bs(page_text, features="lxml")
+    print ("Crawling, found %i links" % len(forum.find_all("a")))
     result = {}
     try:
-        for link in soup.find_all("a"):
+        for link in forum.find_all("a"):
             is_modlink = True
             title = str(link.get('title'))
             href = str(link.get('href'))
@@ -82,10 +81,15 @@ def crawl_forum(page_text, BLACKLIST):
 
 
 
-# def crawl_mod(mod_url):
-#     score = page_analytics(topic_url)
-#     return score
+def crawl_mod(mod_url):
 
+    # '''data-quotedata='{"userid":929465,"username":"AxiosODST","timestamp":1496759058,"contentapp":"forums","contenttype":"forums","contentid":205551,"contentclass":"forums_Topic","contentcommentid":3198756}''''
+
+    page_text = load_page(mod_url)
+    comments = bs(page_text, features="lxml")
+    topic = comments.find_all('div',{"data-commentapp":"forums"})[0]
+
+    return topic
 
 
 for url, pgvar in TARGET_WEBPAGES.items():
@@ -104,7 +108,7 @@ print(output)
 for id, mod in output.items():
     if int(mod['score']) > 0:
         print(id, mod)
-
-# for id, mod in
-
-# import pdb; pdb.set_trace()
+        topic_lines = crawl_mod(mod["href"]).find_all("p")
+        out_md = open(id + ".md", "w")
+        for line in topic_lines:
+            out_md.writelines(htmlslacker(str(line)).get_output()+'\n')
